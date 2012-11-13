@@ -7,6 +7,14 @@ from . import models
 SESSION_ID_SALT = 'django-hashlink'
 
 def hashlink_view(request):
+    def store_path(previous, hashlink):
+        if previous != hashlink:
+            session_id = signing.base64_hmac(SESSION_ID_SALT, str(request.user.id or request.session.session_key), None)
+            models.HashlinkPathDocument.objects.create(previous=previous, current=hashlink, session_id=session_id)
+        else:
+            # TODO: Log, redundant
+            pass
+
     if not request.method == 'POST':
         # TODO: Log
         return http.HttpResponseBadRequest()
@@ -34,8 +42,7 @@ def hashlink_view(request):
             # TODO: Improve with database retry if non-unique
             hashlink = models.HashlinkDocument.objects.create(state=state, hashlink=crypto.get_random_string(8))
 
-        session_id = signing.base64_hmac(SESSION_ID_SALT, request.user.id or request.session.session_key, None)
-        models.HashlinkPathDocument.objects.create(previous=previous, current=hashlink.hashlink, session_id=session_id)
+        store_path(previous, hashlink.hashlink)
 
         return http.HttpResponse(simplejson.dumps({
             'hashlink': hashlink.hashlink,
@@ -48,8 +55,7 @@ def hashlink_view(request):
             # TODO: Log
             return http.HttpResponseBadRequest()
 
-        session_id = signing.base64_hmac(SESSION_ID_SALT, request.user.id or request.session.session_key, None)
-        models.HashlinkPathDocument.objects.create(previous=previous, current=hashlink.hashlink, session_id=session_id)
+        store_path(previous, hashlink.hashlink)
 
         return http.HttpResponse(simplejson.dumps(hashlink.state), mimetype="application/json; charset=utf-8")
 

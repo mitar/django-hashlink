@@ -3,7 +3,7 @@
 
     $.fn.hashchange = function (f) {
         $(window).bind('jQuery.hashchange', f);
-        if (currentHash = null) {
+        if (currentHash == null) {
             init();
         }
         return this;
@@ -46,7 +46,7 @@
 
     function init() {
         if (isOnhashchangeSupported()) {
-            window.onhashchange = callTriggerHash;
+            window.addEventListener('hashchange', callTriggerHash);
         }
         else {
             setInterval(callTriggerHash, 200);
